@@ -1,48 +1,43 @@
 package dbUtils
 
 import(
-	"database/sql/driver"
-	"io"
 	"encoding/json"
+	"database/sql"
 )
 
+func  ParseAsMap(r sql.Rows) ([]map[string]interface{},error) {
 
+	columns, err := r.Columns()
+	if err!= nil{
+		return nil, err
+	}
 
-func  ParseAsMap(r driver.Rows) ([]map[string]interface{},error) {
-	columns := r.Columns()
 	columnsLen := len(columns)
 
 	rawData := make([]map[string]interface{}, 0)
-	values := make([]driver.Value, columnsLen)
+	values := make([]interface{}, columnsLen)
 
 
-	err := r.Next(values)
-	for err == nil  {
 
+	for r.Next()  {
+		r.Scan(values...)
 		record := map[string]interface{}{}
 		for i, c := range columns {
 
 			record[c] = values[i]
 		}
 		rawData = append(rawData, record)
-
-		err = r.Next(values)
-	}
-
-	if err != io.EOF{
-		return nil, err
 	}
 
 
 	return rawData, nil
 }
 
-func ParseAsJson(r driver.Rows) ([]byte,error){
+func ParseAsJson(r sql.Rows) ([]byte,error){
 	data, err := ParseAsMap(r)
 	if err != nil {
 		return nil, err
 	}
 
 	return json.Marshal(data)
-
 }
